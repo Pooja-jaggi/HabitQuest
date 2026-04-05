@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: habits
+    // Fields:
+    //   - name: string (required)
+    //   - icon: string (required)
+    //   - color: string (required)
+    //   - createdAt: timestamp (required)
+    //   - userId: string (required)
+    //
+    // Collection: logs
+    // Fields:
+    //   - habitId: string (required)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - completed: bool (required)
+    //   - userId: string (required)
+    //
+    // Collection: userStats
+    // Fields:
+    //   - level: int (required)
+    //   - xp: int (required)
+    //   - streak: int (required)
+    //   - lastActive: string (optional, YYYY-MM-DD)
+    //
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isValidHabit(data) {
+      return data.keys().hasAll(['name', 'icon', 'color', 'createdAt', 'userId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.icon is string && data.color is string &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidLog(data) {
+      return data.keys().hasAll(['habitId', 'date', 'completed', 'userId']) &&
+             data.habitId is string &&
+             data.date is string && data.date.matches("^\\d{4}-\\d{2}-\\d{2}$") &&
+             data.completed is bool &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidUserStats(data) {
+      return data.keys().hasAll(['level', 'xp', 'streak']) &&
+             data.level is int && data.level >= 1 &&
+             data.xp is int && data.xp >= 0 &&
+             data.streak is int && data.streak >= 0;
+    }
+
+    match /habits/{habitId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidHabit(request.resource.data);
+      allow update: if isDocOwner() && isValidHabit(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /logs/{logId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidLog(request.resource.data);
+      allow update: if isDocOwner() && isValidLog(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /userStats/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserStats(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserStats(request.resource.data);
+    }
+  }
+}

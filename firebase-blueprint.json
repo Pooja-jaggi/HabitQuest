@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Habit": {
+      "title": "Habit",
+      "description": "A habit to track",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the habit" },
+        "icon": { "type": "string", "description": "Lucide icon name" },
+        "color": { "type": "string", "description": "Hex or tailwind color" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "icon", "color", "createdAt", "userId"]
+    },
+    "Log": {
+      "title": "Log",
+      "description": "Daily completion log for a habit",
+      "type": "object",
+      "properties": {
+        "habitId": { "type": "string" },
+        "date": { "type": "string", "format": "date", "description": "YYYY-MM-DD" },
+        "completed": { "type": "boolean" },
+        "userId": { "type": "string" }
+      },
+      "required": ["habitId", "date", "completed", "userId"]
+    },
+    "UserStats": {
+      "title": "UserStats",
+      "description": "Gamification stats for the user",
+      "type": "object",
+      "properties": {
+        "level": { "type": "integer" },
+        "xp": { "type": "integer" },
+        "streak": { "type": "integer" },
+        "lastActive": { "type": "string", "format": "date" }
+      },
+      "required": ["level", "xp", "streak"]
+    }
+  },
+  "firestore": {
+    "/habits/{habitId}": { "schema": "Habit", "description": "User's habits" },
+    "/logs/{logId}": { "schema": "Log", "description": "Habit completion logs" },
+    "/userStats/{userId}": { "schema": "UserStats", "description": "User gamification stats" }
+  }
+}
